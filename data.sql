@@ -1,5 +1,8 @@
-PRAGMA foreign_keys = ON;
-
+PRAGMA foreign_keys = ON;#!
+ 
+ 
+                                                                                                                                                                                                                      
+xx
 INSERT INTO customer VALUES (1, 'Berger, Franz', 'Bochum');
 INSERT INTO customer VALUES (2, 'Novak, Jana',   'Herne');
 
@@ -19,3 +22,7 @@ INSERT INTO work_item VALUES (1001, 2, 3, 'Replace air filter', 0.3);
 INSERT INTO work_item VALUES (1002, 1, 1, 'Front brake pads',   1.5);
 INSERT INTO work_item VALUES (1003, 1, 3, 'Service inspection', 2.0);
 INSERT INTO work_item VALUES (1003, 2, 1, 'Tyre change',        0.8);
+:wq
+ZZ
+:wq
+
