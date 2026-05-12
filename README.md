@@ -115,14 +115,14 @@ Hints:
 - Which attributes follow from the licence plate alone?
 - What does a single mechanic ID determine?
 - What only follows from the combination `(OrderNo, ItemNo)`?
-
-FD1: CustNo       : CustName, CustCity
-FD2: Plate        : Make, Model, Year, CustNo
-FD3: MechId       : MechName, HourlyRate
-FD4: OrderNo      : Date, CustNo, Plate
-FD5: (OrderNo, ItemNo) : MechId, Description, Hours
+19
+ 
+FD1: CustNo → CustName, CustCity
+FD2: Plate → Make, Model, Year, CustNo
+FD3: MechId → MechName, HourlyRate
+FD4: OrderNo → Date, CustNo, Plate
+FD5: (OrderNo, ItemNo) → MechId, Description, Hours
 ### Questions for Task 1
-
 **Question 1.1:** Is `CustNo → CustCity` a *full* or *partial* dependency with
 respect to the primary key `(OrderNo, ItemNo)`? Justify your answer using the
 definition from Lecture 04.
@@ -598,9 +598,16 @@ place), and `orders` (the number of distinct orders in which the mechanic had at
 least one work item). Sort descending by `total_hours`.
 
 ```sql
--- Query 5b:
-Huber, Tom|2.8|2
-Schulz, P.|2.3|2
+-- Query 5b: Total hours per mechanic in March 2026
+SELECT m.mech_name,
+       ROUND(SUM(wi.hours), 1) AS total_hours,
+       COUNT(DISTINCT wi.order_no) AS orders
+FROM mechanic m
+JOIN work_item wi ON m.mech_id = wi.mech_id
+JOIN "order" o ON wi.order_no = o.order_no
+WHERE o.date BETWEEN '2026-03-01' AND '2026-03-31'
+GROUP BY m.mech_id, m.mech_name
+ORDER BY total_hours DESC;
 ```
 
 <details>
@@ -631,10 +638,15 @@ Use a set-difference approach with `EXCEPT` and also write an alternative using
 
 ```sql
 -- Variant 1: EXCEPT
--- Query 5c-1: insert here
+-- Query 5c-1: Vehicles with no repair order (EXCEPT)
+SELECT plate, model FROM vehicle
+EXCEPT
+SELECT v.plate, v.model FROM vehicle v JOIN "order" o ON v.plate = o.plate;
 
 -- Variant 2: NOT EXISTS
--- Query 5c-2: insert here
+-- Query 5c-2: Vehicles with no repair order (NOT EXISTS)
+SELECT v.plate, v.model FROM vehicle v
+WHERE NOT EXISTS (SELECT 1 FROM "order" o WHERE o.plate = v.plate);
 ```
 
 <details>
