@@ -566,6 +566,17 @@ Write the relational algebra expression first (in words or formal notation),
 then the SQL query.
 
 ```sql
+```sql
+-- Query 5a: All work items for customer Berger, Franz
+SELECT o.order_no, o.date, o.plate, wi.description, wi.hours
+FROM customer c
+JOIN "order" o    ON c.cust_no  = o.cust_no
+JOIN vehicle v    ON o.plate    = v.plate
+JOIN work_item wi ON o.order_no = wi.order_no
+WHERE c.cust_name = 'Berger, Franz'
+ORDER BY o.date, wi.item_no;
+```
+
 1001|2026-03-10|BO-AB 123|Oil change|0.5
 1001|2026-03-10|BO-AB 123|Replace air filter|0.3
 1003|2026-03-12|BO-CD 999|Service inspection|2.0
