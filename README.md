@@ -46,7 +46,8 @@ git --version
 > **Screenshot 1:** Take a screenshot of your terminal showing all three
 > successful version checks and insert it here.
 >
-> `[insert screenshot]`
+> <img width="990" height="375" alt="image" src="https://github.com/user-attachments/assets/08861f10-958e-432c-ab40-9eda8493043c" />
+
 
 ---
 
@@ -98,7 +99,11 @@ Read the table carefully and describe one concrete example of each:
 3. **Delete anomaly:** What information is permanently lost if order 1002 is
    deleted entirely?
 
-> *Your answers:*
+> "updates anomaly":If  the mechanic  raises his hourly rate to 70.00, rows 1, 2, and 4 must all be updated simultaneously.
+
+ >"insert anomaly":A new mechanic cannot be added before they work on their first order  because MechId, MechName, and HourlyRate only exist as part of a row that requires a valid OrderNo and ItemNo .
+
+>"delete anomaly":If order 1002 is deleted, all information about the customer Novak, Jana   will be permanently lost since she only appears once in the third row.
 
 ### Task 1b – Write Down Functional Dependencies
 
@@ -111,25 +116,30 @@ Hints:
 - What does a single mechanic ID determine?
 - What only follows from the combination `(OrderNo, ItemNo)`?
 
-> *Your FD list:*
-
+FD1: CustNo       : CustName, CustCity
+FD2: Plate        : Make, Model, Year, CustNo
+FD3: MechId       : MechName, HourlyRate
+FD4: OrderNo      : Date, CustNo, Plate
+FD5: (OrderNo, ItemNo) : MechId, Description, Hours
 ### Questions for Task 1
 
 **Question 1.1:** Is `CustNo → CustCity` a *full* or *partial* dependency with
 respect to the primary key `(OrderNo, ItemNo)`? Justify your answer using the
 definition from Lecture 04.
 
-> *Your answer:*
+> Using the exact definition from Handout 04:"Ein Attribut A hängt partiell von einem Schlüssel K ab, wenn eine echte Teilmenge K′ ⊊ K existiert mit K′ → A". That means CustNo → CustCity is a partial dependency with respect to (OrderNo, ItemNo) which is the primary key.To find a customer's city, you only need OrderNo — you don't need ItemNo at all. Since only part of the primary key (OrderNo, ItemNo) is needed, this is a partial dependency.
 
 **Question 1.2:** Identify a transitive dependency in the flat table and explain
 why it violates 3NF.
 
-> *Your answer:*
+> OrderNo → CustNo → CustCity is a transitive dependency.
+OrderNo determines CustNo, and CustNo determines CustCity. So CustCity depends on the key through CustNo which violates 3NF because CustNo is not a superkey.
 
 **Question 1.3:** Compute the attribute closure $\{\mathrm{OrderNo}\}^+$ using
 your FD list. Is `OrderNo` alone a superkey of the flat table?
 
-> *Your answer:*
+> {OrderNo}⁺ = {OrderNo, Date, CustNo, Plate, CustName, CustCity, Make, Model, Year}
+OrderNo is not a superkey because ItemNo, MechId, MechName, HourlyRate, Description, and Hours are missing. A superkey must determine every attribute in the table.
 
 ---
 
@@ -154,7 +164,16 @@ then fill in the table below.
 Check: In every relation, does each non-key attribute depend on the **complete**
 primary key?
 
-> *Your check:*
+> customer: cust_name and cust_city depend only on cust_no ✔️
+
+>vehicle: make, model, year, cust_no depend only on plate ✔️
+
+
+>mechanic: mech_name and hourly_rate depend only on mech_id ✔️
+
+>order: date, plate, cust_no depend only on order_no ✔️
+
+>work_item: mech_id, description, hours depend on the full (order_no, item_no) — neither order_no nor item_no alone is enough
 
 ### Task 2b – Decompose into 3NF
 
@@ -169,7 +188,12 @@ Examine `order` and `vehicle` for transitive dependencies.
 State your conclusion: are all five relations from Task 2a already in 3NF?
 If not, perform the missing decomposition.
 
-> *Your analysis and any further decomposition:*
+> order table:
+cust_name is already in the customer table — not in order. So there is no transitive dependency in order. cust_no depends directly on order_no ✓
+vehicle table:
+plate determines cust_no, and all other attributes (make, model, year) depend directly on plate. There is no transitive chain, so vehicle is already in 3NF ✓
+Conclusion:
+All five relations from Task 2a are already in 3NF. No further decomposition is needed.
 
 ### Task 2c – Verify Losslessness
 
@@ -181,7 +205,14 @@ $$R_1 \cap R_2 \rightarrow R_1 \setminus R_2 \quad \text{or} \quad R_1 \cap R_2 
 Name the shared attributes, state the FD you rely on, and conclude whether the
 decomposition is lossless.
 
-> *Your verification:*
+>I verified the split of the flat table into order and vehicle.
+
+Shared attribute (R₁ ∩ R₂): plate
+FD used: plate → make, model, year, cust_no
+Since plate determines all attributes that are only in vehicle, the Heath criterion is satisfied:
+
+R₁ ∩ R₂ → R₂ \ R₁ ✓
+Conclusion: The decomposition is lossless — joining order and vehicle on plate always reconstructs the original data exactly, with no phantom rows added.
 
 ### Questions for Task 2
 
@@ -190,20 +221,22 @@ though the customer is also reachable via the vehicle's licence plate?
 Describe a realistic scenario where the direct link `order → customer` is
 necessary.
 
-> *Your answer:*
+> A vehicle can change owners. If a customer sells their car, vehicle.cust_no gets updated to the new owner. Without a direct cust_no in order, we would lose track of who actually placed each past order.
+Realistic scenario:
+Berger sells his BMW to a new owner. The new owner brings the same car (BO-CD 999) in for a repair. Now vehicle.cust_no points to the new owner — but the old order 1003 should still belong to Berger.
 
 **Question 2.2:** Is the schema after the 3NF decomposition also in BCNF?
 Justify your answer using the definition: for every non-trivial FD $X \rightarrow Y$,
 $X$ must be a superkey.
 
-> *Your answer:*
+> In the order table, plate → cust_no holds — but plate is not a superkey of order . This concludes that the schema is in 3NF but not in BCNF..
 
 **Question 2.3:** The hourly rate of a mechanic is stored in `mechanic`. If a
 mechanic changes their rate during the year, what problem arises for already
 completed orders? How could the schema be extended to correctly record
 historical hourly rates?
 
-> *Your answer:*
+> If a mechanic changes their hourly rate, all past orders will show the new rate when joining with the mechanic table — not the rate that applied at the time of the work. This means all the old billing data becomes incorrect.The solution is to store the hourly rate directly in work_item at the time of booking, or add a rate history table.
 
 ---
 
@@ -311,7 +344,8 @@ scp <username>@<server>:/path/to/DBMS_04/schema.svg ~/Downloads/schema.svg
 > **Screenshot 2:** Take a screenshot showing the rendered diagram with all
 > five entities and their relationships.
 >
-> `[insert screenshot]`
+><img width="1171" height="619" alt="image" src="https://github.com/user-attachments/assets/0b2fb016-3bf9-422e-9654-7548bbea5f6b" />
+
 
 ### Task 3c – Commit
 
@@ -412,7 +446,8 @@ sqlite3 workshop.db ".tables"
 
 > **Screenshot 3:** Take a screenshot showing the `.tables` output.
 >
-> `[insert screenshot]`
+> <img width="347" height="91" alt="image" src="https://github.com/user-attachments/assets/c8f5bc58-dc23-4a5a-bcb8-dda7f4883c72" />
+
 
 ### Task 4c – Insert Sample Data
 
@@ -488,7 +523,10 @@ git commit -m "feat: DDL and sample data for normalized workshop schema"
 Justify both choices in terms of the domain — what does it mean for the
 business if an order is deleted versus if a customer is deleted?
 
-> *Your answer:*
+> ON DELETE CASCADE for work_item.order_no: when an order is deleted, its work items have no meaning without it, so they should be deleted automatically.
+
+>ON DELETE RESTRICT for vehicle.cust_no: a customer should not be deleted while they still own a vehicle in the database because it would destroy very important records.
+
 
 **Question 4.2:** Test referential integrity by running:
 
@@ -500,7 +538,7 @@ INSERT INTO work_item VALUES (9999, 1, 3, 'Ghost item', 1.0);
 What error do you get? What does this tell you about the difference between
 a constraint declared in DDL and one that is actually enforced at runtime?
 
-> *Your answer:*
+> This is the error i got:Runtime error: FOREIGN KEY constraint failed (19). This tells me that declaring a constraint in DDL is not enough. SQLite only enforces foreign keys when PRAGMA foreign_keys = ON is explicitly set at runtime.
 
 **Question 4.3:** Test the CHECK constraint:
 
@@ -510,7 +548,7 @@ INSERT INTO work_item VALUES (1001, 3, 3, 'Invalid', -0.5);
 
 What happens? What would happen if the CHECK constraint were missing?
 
-> *Your answer:*
+> i got the error CHECK constraint failed: hours > 0 (19). Without the CHECK constraint, -0.5 would be silently stored, leading to incorrect billing calculations.
 
 ---
 
@@ -528,7 +566,11 @@ Write the relational algebra expression first (in words or formal notation),
 then the SQL query.
 
 ```sql
--- Query 5a: insert here
+1001|2026-03-10|BO-AB 123|Oil change|0.5
+1001|2026-03-10|BO-AB 123|Replace air filter|0.3
+1003|2026-03-12|BO-CD 999|Service inspection|2.0
+1003|2026-03-12|BO-CD 999|Tyre change|0.8
+
 ```
 
 <details>
@@ -543,7 +585,8 @@ order 1003 (BMW 320i, 2026-03-12).
 `work_item`). In what order would the query optimizer ideally perform the joins —
 and why does the join order not affect the *result*, but does affect *performance*?
 
-> *Your answer:*
+> The optimizer would ideally start with customer filtered by name (only 1 row), then join with order, then work_item. The vehicle join is less important here since the plate comes from order directly. The join order does not affect the result because joins are commutative and associative which means that the final set of matching rows is always the same regardless of order.
+> It does though affect performance because starting with a small filtered result (1 customer) means fewer rows to join at each step. Starting with a large table ,on the other hand, would create big intermediate results that would eventually slow down the query.
 
 ---
 
@@ -555,7 +598,9 @@ place), and `orders` (the number of distinct orders in which the mechanic had at
 least one work item). Sort descending by `total_hours`.
 
 ```sql
--- Query 5b: insert here
+-- Query 5b:
+Huber, Tom|2.8|2
+Schulz, P.|2.3|2
 ```
 
 <details>
@@ -572,7 +617,7 @@ least one work item). Sort descending by `total_hours`.
 What would `COUNT(*)` count instead, and why would the result differ in this
 case?
 
-> *Your answer:*
+> COUNT(*) would count the number of work item rows.In this case the result would differ because one mechanic can have multiple work items in the same order.
 
 ---
 
@@ -610,7 +655,9 @@ After that, the query should return `BOT-ZZ 1 | Yaris`.
 always produce the same result. Are there situations where one approach should
 be preferred in practice? Consider readability and extensibility.
 
-> *Your answer:*
+> EXCEPT is simpler and more readable for straightforward set differences.
+> NOT EXISTS is better when the condition is more complex, for example when comparing multiple columns.
+> So in conclustion, NOT EXISTS is generally preferred in practice for its flexibility and performance, while EXCEPT is cleaner for simple cases.
 
 ---
 
