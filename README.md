@@ -677,14 +677,14 @@ The original flat table had 5 rows and 15 columns. The normalized schema has
 5 tables. At which data volume does normalization pay off most — at 5 rows or
 at 50,000? Justify with concrete reference to the anomalies from Task 1a.
 
-> *Your answer:*
+> At 5 rows, update anomalies can still be fixed manually.At 50,000 rows, changing Huber's hourly rate would require updating thousands of rows simultaneously so missing even one would create some inconsistency.So ,normalization pays off much more at 50,000 rows.
 
 **Question B – 3NF vs. BCNF:**  
 Lecture 04 explains that BCNF is not always dependency-preserving. Is this
 relevant for the workshop schema? Would a BCNF decomposition have looked
 different from the 3NF decomposition here?
 
-> *Your answer:*
+> BCNF is not relevant here because the only violation (plate → cust_no in order) is a deliberate design decision. The 3NF and BCNF decompositions look almost identical for this schema. Since 3NF guarantees both losslessness and dependency preservation, it is the better choice here.
 
 **Question C – Redundant foreign key in `order`:**  
 `order` contains both `plate` (FK → `vehicle`) and `cust_no` (FK → `customer`).
@@ -692,7 +692,7 @@ Since `vehicle` itself contains `cust_no`, one might argue that `cust_no`
 in `order` is redundant and violates 3NF. Is that correct? When would such
 a deliberate denormalization be justified?
 
-> *Your answer:*
+> We keep cust_no in order because a car can be sold to a new owner. If we removed it, old orders would show the new owner instead of the person who actually brought the car in. We want to always know who placed each order, so we store the customer directly on the order even if it looks redundant.
 
 **Question D – NULL and order status:**  
 An order that has just been created may have no work items yet. What does the
@@ -700,12 +700,16 @@ current schema say about this case? Would the schema need to be extended to
 correctly represent an order's status (open / completed)? Sketch the necessary
 change.
 
-> *Your answer:*
+> The current schema allows an order to exist with no work items ,this is fine because work_item does not require an order to have at least one item. However, there is no way to tell if an order is open or completed.
+> To fix this, we can add a status column to the order table:ALTER TABLE "order" ADD COLUMN status TEXT
+    NOT NULL DEFAULT 'open'
+    CHECK (status IN ('open', 'completed', 'cancelled'));
 
 > **Screenshot 4:** Take a screenshot showing the output of Query 5b directly
 > in `sqlite3` (with `.headers on` and `.mode column` activated).
 >
-> `[insert screenshot]`
+> <img width="352" height="77" alt="image" src="https://github.com/user-attachments/assets/c3b955b3-b066-40c8-beec-dba1dd55cf13" />
+
 
 ---
 
